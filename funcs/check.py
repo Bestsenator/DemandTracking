@@ -1,4 +1,4 @@
-from index.models import APIKEY, Manager, AccessCharacter
+from index.models import APIKEY, Manager, AccessCharacter, LocationBelongToManager
 from index.serializers import SectionCodeSer
 import re
 
@@ -40,7 +40,10 @@ def checkSessionKey(key):
         return context
     accessCodeInfo = AccessCharacter.objects.filter(Character=managerInfo.Character)
     if accessCodeInfo:
-        accessCodeInfoSer = SectionCodeSer(accessCodeInfo, many=True).data
+        accessCodeInfoSer = []
+        accessCodeInfoSerWithDict = SectionCodeSer(accessCodeInfo, many=True).data
+        for item in accessCodeInfoSerWithDict:
+            accessCodeInfoSer.append(item.get('Code'))
     else:
         accessCodeInfoSer = []
     context = {
@@ -48,6 +51,13 @@ def checkSessionKey(key):
         'Manager': managerInfo,
         'AccessList': accessCodeInfoSer
     }
+    if managerInfo.Character.AccessLevel == 3:  # responsible
+        locationInfo = LocationBelongToManager.objects.filter(Manager=managerInfo)
+        listLoc = []
+        if locationInfo:
+            for item in locationInfo:
+                listLoc.append(item.LocationCode)
+        context['AccessLocation'] = listLoc
     return context
 
 

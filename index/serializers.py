@@ -19,9 +19,15 @@ class BigCitySer(serializers.ModelSerializer):
 
 
 class BigCityListSer(serializers.ModelSerializer):
+    Type = serializers.SerializerMethodField()
+
     class Meta:
         model = BigCity
-        fields = ['Code', 'Name']
+        fields = ['Code', 'Name', 'Type']
+
+    @staticmethod
+    def get_Type(obj):
+        return 1
 
 
 class CitySer(serializers.ModelSerializer):
@@ -32,9 +38,15 @@ class CitySer(serializers.ModelSerializer):
 
 
 class CityListSer(serializers.ModelSerializer):
+    Type = serializers.SerializerMethodField()
+
     class Meta:
         model = City
-        fields = ['Code', 'Name']
+        fields = ['Code', 'Name', 'Type']
+
+    @staticmethod
+    def get_Type(obj):
+        return 2
 
 
 class CityPartSer(serializers.ModelSerializer):
@@ -45,9 +57,15 @@ class CityPartSer(serializers.ModelSerializer):
 
 
 class CityPartListSer(serializers.ModelSerializer):
+    Type = serializers.SerializerMethodField()
+
     class Meta:
         model = CityPart
-        fields = ['Code', 'Name']
+        fields = ['Code', 'Name', 'Type']
+
+    @staticmethod
+    def get_Type(obj):
+        return 3
 
 
 class BigVillageSer(serializers.ModelSerializer):
@@ -58,9 +76,15 @@ class BigVillageSer(serializers.ModelSerializer):
 
 
 class BigVillageListSer(serializers.ModelSerializer):
+    Type = serializers.SerializerMethodField()
+
     class Meta:
         model = BigVillage
-        fields = ['Code', 'Name']
+        fields = ['Code', 'Name', 'Type']
+
+    @staticmethod
+    def get_Type(obj):
+        return 4
 
 
 class VillageSer(serializers.ModelSerializer):
@@ -69,7 +93,7 @@ class VillageSer(serializers.ModelSerializer):
     class Meta:
         model = Village
         fields = ['Code', 'Name', 'isEconomic', 'nPopulation', 'nHousehold', 'Description', 'City', 'RegisterTime',
-                  'BigVillage']
+                  'BigVillage', 'type']
         depth = 4
 
     @staticmethod
@@ -79,9 +103,15 @@ class VillageSer(serializers.ModelSerializer):
 
 
 class VillageListSer(serializers.ModelSerializer):
+    Type = serializers.SerializerMethodField()
+
     class Meta:
         model = Village
-        fields = ['Code', 'Name']
+        fields = ['Code', 'Name', 'Type']
+
+    @staticmethod
+    def get_Type(obj):
+        return 5
 
 
 class RedundantInformationSer(serializers.ModelSerializer):
@@ -264,3 +294,111 @@ class SectionCodeSer(serializers.ModelSerializer):
     class Meta:
         model = AccessCharacter
         fields = ['Code']
+
+
+class CharacterSer(serializers.ModelSerializer):
+    class Meta:
+        model = Character
+        fields = ['Code', 'Name']
+
+
+class ManagerListSer(serializers.ModelSerializer):
+    class Meta:
+        model = Manager
+        fields = ['Code', 'Name', 'Family', 'SirName', 'NaCode', 'Phone', 'Character', 'RegisterTime']
+        depth = 2
+
+
+class ManagerInfoSer(serializers.ModelSerializer):
+    AccessLocation = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Manager
+        fields = ['Code', 'Name', 'Family', 'SirName', 'NaCode', 'Phone', 'Character', 'Password', 'RegisterTime',
+                  'AccessLocation']
+        depth = 2
+
+    @staticmethod
+    def get_AccessLocation(obj):
+        if obj.Character.AccessLevel == 3:  # responsible
+            accessCodeInfo = LocationBelongToManager.objects.filter(Manager__Code=obj.Code)
+            if accessCodeInfo:
+                infoLocation = []
+                for item in accessCodeInfo:
+                    locationInfo = BigCity.objects.filter(Code=item.LocationCode).first()
+                    if locationInfo:
+                        infoLocation.append(BigCityListSer(locationInfo).data)
+                    locationInfo = City.objects.filter(Code=item.LocationCode).first()
+                    if locationInfo:
+                        infoLocation.append(CityListSer(locationInfo).data)
+                    locationInfo = CityPart.objects.filter(Code=item.LocationCode).first()
+                    if locationInfo:
+                        infoLocation.append(CityPartListSer(locationInfo).data)
+                    locationInfo = BigVillage.objects.filter(Code=item.LocationCode).first()
+                    if locationInfo:
+                        infoLocation.append(BigVillageListSer(locationInfo).data)
+                    locationInfo = Village.objects.filter(Code=item.LocationCode).first()
+                    if locationInfo:
+                        infoLocation.append(VillageListSer(locationInfo).data)
+                return infoLocation
+            else:
+                return []
+        else:
+            return []
+
+
+class AccessLocationResponsibleSer(serializers.ModelSerializer):
+    Info = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LocationBelongToManager
+        fields = ['Info']
+
+    @staticmethod
+    def get_Info(obj):
+        locationInfo = BigCity.objects.filter(Code=obj.LocationCode).first()
+        if locationInfo:
+            context = {
+                'Code': locationInfo.Code,
+                'Name': locationInfo.Name,
+                'Type': locationInfo.type
+            }
+            return context
+        locationInfo = City.objects.filter(Code=obj.LocationCode).first()
+        if locationInfo:
+            context = {
+                'Code': locationInfo.Code,
+                'Name': locationInfo.Name,
+                'Type': locationInfo.type
+            }
+            return context
+        locationInfo = CityPart.objects.filter(Code=obj.LocationCode).first()
+        if locationInfo:
+            context = {
+                'Code': locationInfo.Code,
+                'Name': locationInfo.Name,
+                'Type': locationInfo.type
+            }
+            return context
+        locationInfo = BigVillage.objects.filter(Code=obj.LocationCode).first()
+        if locationInfo:
+            context = {
+                'Code': locationInfo.Code,
+                'Name': locationInfo.Name,
+                'Type': locationInfo.type
+            }
+            return context
+        locationInfo = Village.objects.filter(Code=obj.LocationCode).first()
+        if locationInfo:
+            context = {
+                'Code': locationInfo.Code,
+                'Name': locationInfo.Name,
+                'Type': locationInfo.type
+            }
+            return context
+
+
+class SliderSer(serializers.ModelSerializer):
+    class Meta:
+        model = Slider
+        fields = ['Code', 'Image']

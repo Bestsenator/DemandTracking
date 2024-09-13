@@ -46,6 +46,18 @@ def uploadToAttachmentToPeople(instance, filename):
     return os.path.join('peopleBelongToPlace', filename)
 
 
+def uploadToSlider(instance, filename):
+    ext = filename.split('.')[-1]
+    filename = f"{instance.Code}_{rand2Num()}.{ext}"
+    return os.path.join('slider', filename)
+
+
+def uploadToLocationImage(instance, filename):
+    ext = filename.split('.')[-1]
+    filename = f"{instance.Code}_4{rand2Num()}.{ext}"
+    return os.path.join('locationImage', filename)
+
+
 def currentDateTime():
     # time = str(jdatetime.datetime.today())
     time = jdatetime.datetime.today()
@@ -72,8 +84,8 @@ class APIKEY(models.Model):
 class Character(models.Model):
     accChoices = (
         (1, 'Main Admin'),
-        (2, 'Trustee'),
-        (3, 'Responsible'),
+        (2, 'Trustee'),  # نماینده
+        (3, 'Responsible'),  # معین
     )
     Code = models.IntegerField(default=randIntAnything, primary_key=True)
     Name = models.CharField(max_length=150)
@@ -93,7 +105,11 @@ class Manager(models.Model):
     Password = models.CharField(max_length=50, default='')
     Character = models.ForeignKey(Character, on_delete=models.CASCADE)
     Session = models.CharField(default=sesProduction, max_length=200)
+    isDeleted = models.BooleanField(default=False)
     RegisterTime = jmodels.jDateTimeField(default=currentDateTime)
+
+    def __str__(self):
+        return f'{self.SirName} - {self.Character.Name}'
 
 
 class LocationBelongToManager(models.Model):
@@ -108,6 +124,8 @@ class BigCity(models.Model):
     Name = models.CharField(max_length=150)
     nPopulation = models.IntegerField(default=0)
     nHousehold = models.IntegerField(default=0)
+    Image = models.ImageField(upload_to=uploadToLocationImage, blank=True, null=True)
+    Description = models.TextField(max_length=2000, default=' ', blank=True, null=True)
     type = models.IntegerField(default=1, editable=False)  # for location
     isDeleted = models.BooleanField(default=False)
     RegisterTime = jmodels.jDateTimeField(default=currentDateTime)
@@ -122,36 +140,42 @@ class City(models.Model):
     BigCity = models.ForeignKey(BigCity, on_delete=models.CASCADE)
     nPopulation = models.IntegerField(default=0)
     nHousehold = models.IntegerField(default=0)
+    Image = models.ImageField(upload_to=uploadToLocationImage, blank=True, null=True)
+    Description = models.TextField(max_length=2000, default=' ', blank=True, null=True)
     type = models.IntegerField(default=2, editable=False)  # for location
     isDeleted = models.BooleanField(default=False)
     RegisterTime = jmodels.jDateTimeField(default=currentDateTime)
 
     def __str__(self) -> str:
-        return f'{self.Name} - {self.Code}'
+        return f'{self.Name} - {self.Code} ( {self.BigCity.Name} )'
 
 
 class CityPart(models.Model):
     Code = models.IntegerField(default=randIntAnything, primary_key=True)
     Name = models.CharField(max_length=150)
     City = models.ForeignKey(City, on_delete=models.CASCADE)
+    Image = models.ImageField(upload_to=uploadToLocationImage, blank=True, null=True)
+    Description = models.TextField(max_length=2000, default=' ', blank=True, null=True)
     type = models.IntegerField(default=3, editable=False)  # for location
     isDeleted = models.BooleanField(default=False)
     RegisterTime = jmodels.jDateTimeField(default=currentDateTime)
 
     def __str__(self) -> str:
-        return f'{self.Name} - {self.Code}'
+        return f'{self.Name} - {self.Code} ( {self.City.Name} )'
 
 
 class BigVillage(models.Model):
     Code = models.IntegerField(default=randIntAnything, primary_key=True)
     Name = models.CharField(max_length=150)
     CityPart = models.ForeignKey(CityPart, on_delete=models.CASCADE)
+    Image = models.ImageField(upload_to=uploadToLocationImage, blank=True, null=True)
+    Description = models.TextField(max_length=2000, default=' ', blank=True, null=True)
     type = models.IntegerField(default=4, editable=False)  # for location
     isDeleted = models.BooleanField(default=False)
     RegisterTime = jmodels.jDateTimeField(default=currentDateTime)
 
     def __str__(self) -> str:
-        return f'{self.Name} - {self.Code}'
+        return f'{self.Name} - {self.Code} ( {self.CityPart.Name} )'
 
 
 class Village(models.Model):
@@ -160,7 +184,8 @@ class Village(models.Model):
     isEconomic = models.BooleanField(default=False)
     nPopulation = models.IntegerField(default=0)
     nHousehold = models.IntegerField(default=0)
-    Description = models.TextField(max_length=2000)
+    Image = models.ImageField(upload_to=uploadToLocationImage, blank=True, null=True)
+    Description = models.TextField(max_length=2000, default=' ', blank=True, null=True)
     CityCode = models.IntegerField(default=0)
     BigVillage = models.ForeignKey(BigVillage, on_delete=models.CASCADE)
     type = models.IntegerField(default=5, editable=False)  # for location
@@ -168,7 +193,7 @@ class Village(models.Model):
     RegisterTime = jmodels.jDateTimeField(default=currentDateTime)
 
     def __str__(self) -> str:
-        return f'{self.Name} - {self.Code}'
+        return f'{self.Name} - {self.Code} ( {self.BigVillage.Name} )'
 
 
 class Proper(models.Model):
@@ -291,6 +316,12 @@ class SolutionBelongToProperty(models.Model):
     PropertyBelongPlace = models.ForeignKey(PropertyBelongPlace, on_delete=models.CASCADE)
     Content = models.TextField(max_length=2000)
     Organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    RegisterTime = jmodels.jDateTimeField(default=currentDateTime)
+
+
+class Slider(models.Model):
+    Code = models.IntegerField(default=randIntAnything, primary_key=True)
+    Image = models.ImageField(upload_to=uploadToSlider)
     RegisterTime = jmodels.jDateTimeField(default=currentDateTime)
 
 

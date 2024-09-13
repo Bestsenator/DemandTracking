@@ -9,10 +9,11 @@ from index.serializers import (ManagerSer, Manager, BigCity, BigCitySer, City, C
                                PropertyBelongPlace, PropertySer, PropertyBelongPlaceListSer, PropertyListSer, \
                                SubProperty, SubPropertyListSer, Proper, ProperListSer, PeopleBelongLocation,
                                PeopleBelongLocationListSer, PeopleBelongLocationSer, AnswerToPropertyListSer,
-                               AnswerToProperty, PropertyBelongPlaceSer, ExportPropertyList, Organization,
-                               OrganizationSer, SolutionBelongToProperty, SolutionBelongToPropertySer, Section,
-                               AccessSectionListManagerSer)
-from index.models import AccessCharacter
+                               AnswerToProperty, PropertyBelongPlaceSer, ExportPropertyList, Organization, Slider,
+                               OrganizationSer, SolutionBelongToProperty, SolutionBelongToPropertySer, SliderSer,
+                               AccessSectionListManagerSer, Character, CharacterSer, ManagerListSer, ManagerInfoSer,
+                               AccessLocationResponsibleSer)
+from index.models import AccessCharacter, LocationBelongToManager
 
 
 # Create your views here.
@@ -67,13 +68,22 @@ def checkSession(request):
             'Message': 'Session invalid'
         }
         return Response(context)
-    managerInfo = Manager.objects.filter(Session=session).first()
+    managerInfo = Manager.objects.filter(Session=session, isDeleted=False).first()
     if managerInfo:
         managerInfoSer = ManagerSer(managerInfo).data
         context = {
             'Status': 200,
             'Manager': managerInfoSer
         }
+        if managerInfo.Character.AccessLevel == 3:  # responsible
+            locationInfo = LocationBelongToManager.objects.filter(Manager=managerInfo)
+            if locationInfo:
+                listLocCode = []
+                for item in locationInfo:
+                    listLocCode.append(item.LocationCode)
+                context['AccessLocation'] = listLocCode
+            else:
+                context['AccessLocation'] = []
         return Response(context)
     else:
         context = {
@@ -100,7 +110,9 @@ def getLocationListByFilter(request):
         return Response(context)
     if resManager.get('Status') == 902:
         return Response(resManager)
-
+    listAccLocation = None
+    if resManager.get('Manager').Character.AccessLevel == 3:  # responsible
+        listAccLocation = resManager.get('AccessLocation')
     phrase = request.data.get('Phrase')
     typeLocation = request.data.get('Location')
     if not typeLocation:
@@ -131,7 +143,8 @@ def getLocationListByFilter(request):
             bigCityInfoSer = BigCitySer(bigCityInfo, many=True).data
             context = {
                 'Status': 200,
-                'Info': bigCityInfoSer
+                'Info': bigCityInfoSer,
+                'AccessLocation': listAccLocation
             }
             return Response(context)
         else:
@@ -149,7 +162,8 @@ def getLocationListByFilter(request):
             cityInfoSer = CitySer(cityInfo, many=True).data
             context = {
                 'Status': 200,
-                'Info': cityInfoSer
+                'Info': cityInfoSer,
+                'AccessLocation': listAccLocation
             }
             return Response(context)
         else:
@@ -167,7 +181,8 @@ def getLocationListByFilter(request):
             cityPartInfoSer = CityPartSer(cityPartInfo, many=True).data
             context = {
                 'Status': 200,
-                'Info': cityPartInfoSer
+                'Info': cityPartInfoSer,
+                'AccessLocation': listAccLocation
             }
             return Response(context)
         else:
@@ -185,7 +200,8 @@ def getLocationListByFilter(request):
             bigVillageInfoSer = BigVillageSer(bigVillageInfo, many=True).data
             context = {
                 'Status': 200,
-                'Info': bigVillageInfoSer
+                'Info': bigVillageInfoSer,
+                'AccessLocation': listAccLocation
             }
             return Response(context)
         else:
@@ -203,7 +219,127 @@ def getLocationListByFilter(request):
             villageInfoSer = VillageSer(villageInfo, many=True).data
             context = {
                 'Status': 200,
-                'Info': villageInfoSer
+                'Info': villageInfoSer,
+                'AccessLocation': listAccLocation
+            }
+            return Response(context)
+        else:
+            context = {
+                'Status': 402,
+                'Message': 'Empty List'
+            }
+            return Response(context)
+
+
+@api_view(['POST'])
+def getLocationListBlog(request):
+    apiKey = request.headers.get('API-X-KEY')
+    resApi = checkApiKey(apiKey)
+    if resApi.get('Status') == 900:
+        return Response(resApi)
+    phrase = request.data.get('Phrase')
+    typeLocation = request.data.get('Location')
+    if not typeLocation:
+        context = {
+            'Status': 400,
+            'Message': 'Input Incomplete'
+        }
+        return Response(context)
+    listTypeLoc = [
+        '1',  # Big City
+        '2',  # City
+        '3',  # City Part
+        '4',  # Big Village
+        '5',  # Village
+    ]
+    if typeLocation not in listTypeLoc:
+        context = {
+            'Status': 401,
+            'Message': 'Location Value Invalid'
+        }
+        return Response(context)
+    if typeLocation == '1':
+        if phrase:
+            bigCityInfo = BigCity.objects.filter(Name__contains=phrase, isDeleted=False)
+        else:
+            bigCityInfo = BigCity.objects.filter(isDeleted=False)
+        if bigCityInfo:
+            bigCityInfoSer = BigCitySer(bigCityInfo, many=True).data
+            context = {
+                'Status': 200,
+                'Info': bigCityInfoSer,
+            }
+            return Response(context)
+        else:
+            context = {
+                'Status': 402,
+                'Message': 'Empty List'
+            }
+            return Response(context)
+    elif typeLocation == '2':
+        if phrase:
+            cityInfo = City.objects.filter(Name__contains=phrase, isDeleted=False)
+        else:
+            cityInfo = City.objects.filter(isDeleted=False)
+        if cityInfo:
+            cityInfoSer = CitySer(cityInfo, many=True).data
+            context = {
+                'Status': 200,
+                'Info': cityInfoSer,
+            }
+            return Response(context)
+        else:
+            context = {
+                'Status': 402,
+                'Message': 'Empty List'
+            }
+            return Response(context)
+    elif typeLocation == '3':
+        if phrase:
+            cityPartInfo = CityPart.objects.filter(Name__contains=phrase, isDeleted=False)
+        else:
+            cityPartInfo = CityPart.objects.filter(isDeleted=False)
+        if cityPartInfo:
+            cityPartInfoSer = CityPartSer(cityPartInfo, many=True).data
+            context = {
+                'Status': 200,
+                'Info': cityPartInfoSer,
+            }
+            return Response(context)
+        else:
+            context = {
+                'Status': 402,
+                'Message': 'Empty List'
+            }
+            return Response(context)
+    elif typeLocation == '4':
+        if phrase:
+            bigVillageInfo = BigVillage.objects.filter(Name__contains=phrase, isDeleted=False)
+        else:
+            bigVillageInfo = BigVillage.objects.filter(isDeleted=False)
+        if bigVillageInfo:
+            bigVillageInfoSer = BigVillageSer(bigVillageInfo, many=True).data
+            context = {
+                'Status': 200,
+                'Info': bigVillageInfoSer,
+            }
+            return Response(context)
+        else:
+            context = {
+                'Status': 402,
+                'Message': 'Empty List'
+            }
+            return Response(context)
+    else:
+        if phrase:
+            villageInfo = Village.objects.filter(Name__contains=phrase, isDeleted=False)
+        else:
+            villageInfo = Village.objects.filter(isDeleted=False)
+        if villageInfo:
+            villageInfoSer = VillageSer(villageInfo, many=True).data
+            context = {
+                'Status': 200,
+                'Info': villageInfoSer,
             }
             return Response(context)
         else:
@@ -467,6 +603,8 @@ def addPlace(request):
         }
         return Response(context)
     name = request.data.get('Name')
+    image = request.FILES.get('Image')
+    description = request.data.get('Description')
     typeLocation = request.data.get('TypeLocation')
     nHousehold = request.data.get('nHousehold')
     nPopulation = request.data.get('nPopulation')
@@ -477,7 +615,7 @@ def addPlace(request):
         '4',  # Big Village
         '5',  # Village
     ]
-    resInput = checkInput([name, typeLocation])
+    resInput = checkInput([name, typeLocation, nHousehold, description, image])
     if not resInput:
         context = {
             'Status': 400,
@@ -497,7 +635,8 @@ def addPlace(request):
                 'Message': 'Input Incomplete'
             }
             return Response(context)
-        bigCityInfo = BigCity.objects.create(Name=name, nHousehold=nHousehold, nPopulation=nPopulation)
+        bigCityInfo = BigCity.objects.create(Name=name, nHousehold=nHousehold, nPopulation=nPopulation,
+                                             Image=image, Description=description)
         redundantList = RedundantInformation.objects.filter(ForLocation=1)
         if redundantList:
             for item in redundantList:
@@ -530,7 +669,8 @@ def addPlace(request):
                 'Message': 'big city code invalid'
             }
             return Response(context)
-        cityInfo = City.objects.create(Name=name, BigCity=bigCityInfo, nHousehold=nHousehold, nPopulation=nPopulation)
+        cityInfo = City.objects.create(Name=name, BigCity=bigCityInfo, nHousehold=nHousehold, nPopulation=nPopulation,
+                                       Image=image, Description=description)
         redundantList = RedundantInformation.objects.filter(ForLocation=2)
         if redundantList:
             for item in redundantList:
@@ -571,7 +711,7 @@ def addPlace(request):
                 'Message': 'city code invalid'
             }
             return Response(context)
-        cityPartInfo = CityPart.objects.create(Name=name, City=cityInfo)
+        cityPartInfo = CityPart.objects.create(Name=name, City=cityInfo, Image=image, Description=description)
         redundantList = RedundantInformation.objects.filter(ForLocation=3)
         if redundantList:
             for item in redundantList:
@@ -626,7 +766,8 @@ def addPlace(request):
                 'Message': 'city part code invalid'
             }
             return Response(context)
-        bigVillageInfo = BigVillage.objects.create(Name=name, CityPart=cityPartInfo)
+        bigVillageInfo = BigVillage.objects.create(Name=name, CityPart=cityPartInfo, Image=image,
+                                                   Description=description)
         redundantList = RedundantInformation.objects.filter(ForLocation=4)
         if redundantList:
             for item in redundantList:
@@ -706,7 +847,7 @@ def addPlace(request):
             return Response(context)
         villageInfo = Village.objects.create(Name=name, CityCode=cityCode, nHousehold=nHousehold,
                                              BigVillage=bigVillageInfo, nPopulation=nPopulation,
-                                             Description=description, isEconomic=isEconomic)
+                                             Description=description, isEconomic=isEconomic, Image=image)
         redundantList = RedundantInformation.objects.filter(ForLocation=5)
         if redundantList:
             for item in redundantList:
@@ -1029,6 +1170,8 @@ def editPlace(request):
     name = request.data.get('Name')
     nHousehold = request.data.get('nHousehold')
     nPopulation = request.data.get('nPopulation')
+    image = request.FILES.get('Image')
+    description = request.data.get('Description')
     resInput = checkInput([code, name])
     if not resInput:
         context = {
@@ -1072,17 +1215,18 @@ def editPlace(request):
                 else:
                     ReInformationValue.objects.create(RedundantInformation=item, LocationCode=placeInfo.Code,
                                                       Value=valueItem)
-
     if placeInfo.type == 5:  # village
         isEconomic = request.data.get('isEconomic')
-        description = request.data.get('Description')
-        if not isEconomic or not description:
+        if not isEconomic:
             context = {
                 'Status': 402,
                 'Message': 'Input Incomplete'
             }
             return Response(context)
         placeInfo.isEconomic = isEconomic
+    if image:
+        placeInfo.Image = image
+    if description:
         placeInfo.Description = description
     placeInfo.nPopulation = nPopulation
     placeInfo.nHousehold = nHousehold
@@ -1099,6 +1243,13 @@ def getInfoPlace(request):
     accessCode = 7230963  # fetch from section table
     apiKey = request.headers.get('API-X-KEY')
     resApi = checkApiKey(apiKey)
+    code = request.data.get('Code')
+    if not code:
+        context = {
+            'Status': 400,
+            'Message': 'Input Incomplete'
+        }
+        return Response(context)
     if resApi.get('Status') == 900:
         return Response(resApi)
     if resApi.get('Info').ForUse == 1:  # panel api key
@@ -1112,13 +1263,6 @@ def getInfoPlace(request):
                 'Message': 'Access Denied'
             }
             return Response(context)
-    code = request.data.get('Code')
-    if not code:
-        context = {
-            'Status': 400,
-            'Message': 'Input Incomplete'
-        }
-        return Response(context)
     if str(code).startswith('5'):  # Code
         cityInfo = City.objects.filter(Code=code).first()
         bigCityInfo = BigCity.objects.filter(Code=code).first()
@@ -1180,6 +1324,7 @@ def getInfoPlace(request):
                 reInfoValue = ReInformationValue.objects.filter(LocationCode=villageInfo.Code)
                 if reInfoValue:
                     context['RedundantInfo'] = ReInfoValueSer(reInfoValue, many=True).data
+            return Response(context)
         else:
             context = {
                 'Status': 401,
@@ -1379,6 +1524,10 @@ def deletePropertyBelongToPlace(request):
     resManager = checkSessionKey(session)
     if resManager.get('Status') == 902:
         return Response(resManager)
+    accessList = resManager.get('AccessList')
+    print(accessCode)
+    for item in accessList:
+        print(f'{item} - {accessCode}')
     if accessCode not in resManager.get('AccessList'):  # access denied
         context = {
             'Status': -1,
@@ -1400,6 +1549,13 @@ def deletePropertyBelongToPlace(request):
         return Response(context)
     for item in code:
         propertyInfo = PropertyBelongPlace.objects.filter(Code=item).first()
+        if resManager.get('Manager').Character.AccessLevel == 3:  # responsible
+            if propertyInfo.PlaceCode not in resManager.get('AccessLocation'):
+                context = {
+                    'Status': 406,
+                    'Message': 'Access Denied to this location'
+                }
+                return Response(context)
         if propertyInfo:
             propertyInfo.delete()
     context = {
@@ -1548,6 +1704,15 @@ def addPropertyToPlace(request):
             'Error': e.__class__.__name__
         }
         return Response(context)
+    print(resManager.get('Manager').Character.AccessLevel)
+    if resManager.get('Manager').Character.AccessLevel == 3:  # responsible
+        accessLocation = resManager.get('AccessLocation')
+        if placeCode not in resManager.get('AccessLocation'):
+            context = {
+                'Status': 406,
+                'Message': 'Access Denied to this location'
+            }
+            return Response(context)
     listType = [1, 2, 3, 4, 5]
     if typeLocation not in listType:
         context = {
@@ -1632,6 +1797,13 @@ def editPropertyToPlace(request):
         return Response(context)
     propertyInfo = PropertyBelongPlace.objects.filter(Code=code).first()
     if propertyInfo:
+        if resManager.get('Manager').Character.AccessLevel == 3:  # responsible
+            if propertyInfo.PlaceCode not in resManager.get('AccessLocation'):
+                context = {
+                    'Status': 406,
+                    'Message': 'Access Denied to this location'
+                }
+                return Response(context)
         propertyInfo.Title = title
         propertyInfo.Description = description
         if image:
@@ -1804,6 +1976,13 @@ def addPeopleBelongToPlace(request):
             'Message': 'Input Incomplete'
         }
         return Response(context)
+    if resManager.get('Manager').Character.AccessLevel == 3:  # responsible
+        if locationCode not in resManager.get('AccessLocation'):
+            context = {
+                'Status': 406,
+                'Message': 'Access Denied to this location'
+            }
+            return Response(context)
     locationInfo = None
     if str(locationCode).startswith('5'):  # Code
         cityInfo = City.objects.filter(Code=locationCode).first()
@@ -1911,6 +2090,13 @@ def editPeopleBelongToPlace(request):
         return Response(context)
     peopleInfo = PeopleBelongLocation.objects.filter(Code=code).first()
     if peopleInfo:
+        if resManager.get('Manager').Character.AccessLevel == 3:  # responsible
+            if peopleInfo.LocationCode not in resManager.get('AccessLocation'):
+                context = {
+                    'Status': 406,
+                    'Message': 'Access Denied to this location'
+                }
+                return Response(context)
         peopleInfo.Proper = properInfo
         peopleInfo.Name = name
         peopleInfo.Family = family
@@ -1962,6 +2148,13 @@ def deletePeopleBelongToPlace(request):
         return Response(context)
     peopleInfo = PeopleBelongLocation.objects.filter(Code=code).first()
     if peopleInfo:
+        if resManager.get('Manager').Character.AccessLevel == 3:  # responsible
+            if peopleInfo.LocationCode not in resManager.get('AccessLocation'):
+                context = {
+                    'Status': 406,
+                    'Message': 'Access Denied to this location'
+                }
+                return Response(context)
         peopleInfo.delete()
         context = {
             'Status': 200
@@ -2157,6 +2350,14 @@ def getAnswerPropertyBToPlaceList(request):
         answerInfo = AnswerToProperty.objects.filter(PropertyBelongPlace__Code=code,
                                                      PropertyBelongPlace__isPrivate=False).order_by('RegisterTime')
     if answerInfo:
+        if resApi.get('Info').ForUse == 1:
+            if resManager.get('Manager').Character.AccessLevel == 3:  # responsible
+                if answerInfo.PropertyBelongPlace.PlaceCode not in resManager.get('AccessLocation'):
+                    context = {
+                        'Status': 406,
+                        'Message': 'Access Denied to this location'
+                    }
+                    return Response(context)
         answerInfoSer = AnswerToPropertyListSer(answerInfo, many=True).data
         context = {
             'Status': 200,
@@ -2211,6 +2412,13 @@ def addAnswerToProperty(request):
             'Message': 'PropertyPlaceCode invalid'
         }
         return Response(context)
+    if resManager.get('Manager').Character.AccessLevel == 3:  # responsible
+        if propertyInfo.PlaceCode not in resManager.get('AccessLocation'):
+            context = {
+                'Status': 406,
+                'Message': 'Access Denied to this location'
+            }
+            return Response(context)
     if file:
         AnswerToProperty.objects.create(PropertyBelongPlace=propertyInfo, Manager=resManager.get('Manager'),
                                         Content=content, File=file)
@@ -2258,6 +2466,13 @@ def editAnswerProperty(request):
         return Response(context)
     answerInfo = AnswerToProperty.objects.filter(Code=code, Manager=resManager.get('Manager')).first()
     if answerInfo:
+        if resManager.get('Manager').Character.AccessLevel == 3:  # responsible
+            if answerInfo.PropertyBelongPlace.PlaceCode not in resManager.get('AccessLocation'):
+                context = {
+                    'Status': 406,
+                    'Message': 'Access Denied to this location'
+                }
+                return Response(context)
         # answerInfo.RegisterTime = jdatetime.datetime.today()
         answerInfo.Content = content
         if file:
@@ -2307,6 +2522,13 @@ def deleteAnswerProperty(request):
         return Response(context)
     answerInfo = AnswerToProperty.objects.filter(Code=code, Manager=resManager.get('Manager')).first()
     if answerInfo:
+        if resManager.get('Manager').Character.AccessLevel == 3:  # responsible
+            if answerInfo.PropertyBelongPlace.PlaceCode not in resManager.get('AccessLocation'):
+                context = {
+                    'Status': 406,
+                    'Message': 'Access Denied to this location'
+                }
+                return Response(context)
         answerInfo.delete()
         context = {
             'Status': 200
@@ -2591,6 +2813,13 @@ def addSolutionToProperty(request):
             'Message': 'Property Code invalid'
         }
         return Response(context)
+    if resManager.get('Manager').Character.AccessLevel == 3:  # responsible
+        if propertyInfo.PlaceCode not in resManager.get('AccessLocation'):
+            context = {
+                'Status': 406,
+                'Message': 'Access Denied to this location'
+            }
+            return Response(context)
     SolutionBelongToProperty.objects.create(Content=content, Organization=orgInfo, PropertyBelongPlace=propertyInfo)
     context = {
         'Status': 200
@@ -2640,6 +2869,13 @@ def editSolutionToProperty(request):
         return Response(context)
     solutionInfo = SolutionBelongToProperty.objects.filter(Code=code).first()
     if solutionInfo:
+        if resManager.get('Manager').Character.AccessLevel == 3:  # responsible
+            if solutionInfo.PropertyBelongPlace.PlaceCode not in resManager.get('AccessLocation'):
+                context = {
+                    'Status': 406,
+                    'Message': 'Access Denied to this location'
+                }
+                return Response(context)
         solutionInfo.Content = content
         solutionInfo.Organization = orgInfo
         solutionInfo.save()
@@ -2687,6 +2923,13 @@ def deleteSolutionToProperty(request):
         return Response(context)
     solutionInfo = SolutionBelongToProperty.objects.filter(Code=code).first()
     if solutionInfo:
+        if resManager.get('Manager').Character.AccessLevel == 3:  # responsible
+            if solutionInfo.PropertyBelongPlace.PlaceCode not in resManager.get('AccessLocation'):
+                context = {
+                    'Status': 406,
+                    'Message': 'Access Denied to this location'
+                }
+                return Response(context)
         solutionInfo.delete()
         context = {
             'Status': 200
@@ -2728,5 +2971,735 @@ def getAccessListManager(request):
         context = {
             'Status': 201,
             'Message': 'Empty list'
+        }
+        return Response(context)
+
+
+@api_view(['GET'])
+def getCharacterList(request):
+    apiKey = request.headers.get('API-X-KEY')
+    resApi = checkApiKey(apiKey)
+    if resApi.get('Status') == 900:
+        return Response(resApi)
+    if resApi.get('Info').ForUse == 2:  # blog api key
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    session = request.headers.get('Session')
+    resManager = checkSessionKey(session)
+    if resManager.get('Status') == 902:
+        return Response(resManager)
+    characterInfo = Character.objects.all()
+    if characterInfo:
+        characterInfoSer = CharacterSer(characterInfo, many=True).data
+        context = {
+            'Status': 200,
+            'Character': characterInfoSer
+        }
+        return Response(context)
+    else:
+        context = {
+            'Status': 201,
+            'Message': 'Empty list'
+        }
+        return Response(context)
+
+
+@api_view(['POST'])
+def addManager(request):
+    accessCode = 7978751  # fetch from section table
+    apiKey = request.headers.get('API-X-KEY')
+    resApi = checkApiKey(apiKey)
+    if resApi.get('Status') == 900:
+        return Response(resApi)
+    if resApi.get('Info').ForUse == 2:  # blog api key
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    session = request.headers.get('Session')
+    resManager = checkSessionKey(session)
+    if resManager.get('Status') == 902:
+        return Response(resManager)
+    print(resManager.get('AccessList'))
+    if accessCode not in resManager.get('AccessList'):  # access denied
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    name = request.data.get('Name')
+    family = request.data.get('Family')
+    sirName = request.data.get('SirName')
+    naCode = request.data.get('NationalCode')
+    phone = request.data.get('Phone')
+    password = request.data.get('Password')
+    character = request.data.get('Character')
+    accLocationCode = None
+    resInput = checkInput([name, family, sirName, naCode, phone, password, character])
+    if not resInput:
+        context = {
+            'Status': 400,
+            'Message': 'Input Incomplete'
+        }
+        return Response(context)
+    characterInfo = Character.objects.filter(Code=character).first()
+    if not characterInfo:
+        context = {
+            'Status': 401,
+            'Message': 'Character invalid'
+        }
+        return Response(context)
+    if len(phone) != 11 or not str(phone).startswith('09'):
+        context = {
+            'Status': 402,
+            'Message': 'Phone invalid'
+        }
+        return Response(context)
+    if len(naCode) != 10:
+        context = {
+            'Status': 403,
+            'Message': 'NationalCode invalid'
+        }
+        return Response(context)
+    if characterInfo.AccessLevel == 3:  # responsible
+        accLocationCode = request.data.get('AccessLocationCode')  # list
+        if not accLocationCode:
+            context = {
+                'Status': 404,
+                'Message': 'for responsible at least one location is required'
+            }
+            return Response(context)
+    phoneInfo = Manager.objects.filter(Phone=phone).first()
+    if phoneInfo:
+        context = {
+            'Status': 405,
+            'Message': 'Manager with phone exist'
+        }
+        return Response(context)
+    managerInfo = Manager.objects.create(Name=name, Family=family, NaCode=naCode, Phone=phone, Password=password,
+                                         Character=characterInfo, SirName=sirName)
+    if accLocationCode is not None:
+        for item in accLocationCode:
+            LocationBelongToManager.objects.create(Manager=managerInfo, LocationCode=item)
+    context = {
+        'Status': 200
+    }
+    return Response(context)
+
+
+@api_view(['POST'])
+def editManager(request):
+    accessCode = 7157943  # fetch from section table
+    apiKey = request.headers.get('API-X-KEY')
+    resApi = checkApiKey(apiKey)
+    if resApi.get('Status') == 900:
+        return Response(resApi)
+    if resApi.get('Info').ForUse == 2:  # blog api key
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    session = request.headers.get('Session')
+    resManager = checkSessionKey(session)
+    if resManager.get('Status') == 902:
+        return Response(resManager)
+    if accessCode not in resManager.get('AccessList'):  # access denied
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    code = request.data.get('Code')
+    name = request.data.get('Name')
+    family = request.data.get('Family')
+    sirName = request.data.get('SirName')
+    naCode = request.data.get('NationalCode')
+    phone = request.data.get('Phone')
+    password = request.data.get('Password')
+    accessLocation = request.data.get('AccessLocationCode')  # list
+    if not code:
+        context = {
+            'Status': 400,
+            'Message': 'Input Incomplete'
+        }
+        return Response(context)
+    managerInfo = Manager.objects.filter(Code=code).first()
+    if not managerInfo:
+        context = {
+            'Status': 401,
+            'Message': 'Code invalid'
+        }
+        return Response(context)
+    if managerInfo.Character.AccessLevel == 3:  # responsible
+        if type(accessLocation) is not list:
+            context = {
+                'Status': 404,
+                'Message': 'AccessLocationCode must be list'
+            }
+            return Response(context)
+        accessLocationInfo = LocationBelongToManager.objects.filter(Manager=managerInfo)
+        if accessLocationInfo:
+            for item in accessLocationInfo:
+                item.delete()
+        for item in accessLocation:
+            LocationBelongToManager.objects.create(Manager=managerInfo, LocationCode=item)
+    if phone:
+        phoneInfo = Manager.objects.filter(Phone=phone).first()
+        if phoneInfo and phoneInfo != managerInfo:
+            context = {
+                'Status': 405,
+                'Message': 'Manager with phone exist'
+            }
+            return Response(context)
+        if len(phone) != 11 or not str(phone).startswith('09'):
+            context = {
+                'Status': 402,
+                'Message': 'Phone invalid'
+            }
+            return Response(context)
+        managerInfo.Phone = phone
+    if naCode:
+        if len(naCode) != 10:
+            context = {
+                'Status': 403,
+                'Message': 'NationalCode invalid'
+            }
+            return Response(context)
+        managerInfo.NaCode = naCode
+    if name:
+        managerInfo.Name = name
+    if family:
+        managerInfo.Family = family
+    if sirName:
+        managerInfo.SirName = sirName
+    if password:
+        managerInfo.Password = password
+    managerInfo.save()
+    context = {
+        'Status': 200
+    }
+    return Response(context)
+
+
+@api_view(['POST'])
+def deleteManager(request):
+    accessCode = 7596126  # fetch from section table
+    apiKey = request.headers.get('API-X-KEY')
+    resApi = checkApiKey(apiKey)
+    if resApi.get('Status') == 900:
+        return Response(resApi)
+    if resApi.get('Info').ForUse == 2:  # blog api key
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    session = request.headers.get('Session')
+    resManager = checkSessionKey(session)
+    if resManager.get('Status') == 902:
+        return Response(resManager)
+    if accessCode not in resManager.get('AccessList'):  # access denied
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    code = request.data.get('Code')
+    if not code:
+        context = {
+            'Status': 400,
+            'Message': 'Input Incomplete'
+        }
+        return Response(context)
+    managerInfo = Manager.objects.filter(Code=code).first()
+    if managerInfo:
+        managerInfo.isDeleted = True
+        managerInfo.save()
+        context = {
+            'Status': 200
+        }
+        return Response(context)
+    else:
+        context = {
+            'Status': 401,
+            'Message': 'Code invalid'
+        }
+        return Response(context)
+
+
+@api_view(['POST'])
+def addLocationToManager(request):
+    accessCode = 7890334  # fetch from section table
+    apiKey = request.headers.get('API-X-KEY')
+    resApi = checkApiKey(apiKey)
+    if resApi.get('Status') == 900:
+        return Response(resApi)
+    if resApi.get('Info').ForUse == 2:  # blog api key
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    session = request.headers.get('Session')
+    resManager = checkSessionKey(session)
+    if resManager.get('Status') == 902:
+        return Response(resManager)
+    if accessCode not in resManager.get('AccessList'):  # access denied
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    code = request.data.get('Code')
+    locationCode = request.data.get('LocationCode')
+    if not code or not locationCode:
+        context = {
+            'Status': 400,
+            'Message': 'Input Incomplete'
+        }
+        return Response(context)
+    managerInfo = Manager.objects.filter(Code=code).first()
+    if managerInfo:
+        locInfo = LocationBelongToManager.objects.filter(LocationCode=locationCode, Manager=managerInfo).first()
+        if not locInfo:
+            LocationBelongToManager.objects.create(Manager=managerInfo, LocationCode=locationCode)
+        context = {
+            'Status': 200
+        }
+        return Response(context)
+    else:
+        context = {
+            'Status': 401,
+            'Message': 'Code invalid'
+        }
+        return Response(context)
+
+
+@api_view(['POST'])
+def deleteLocationToManager(request):
+    accessCode = 7950004  # fetch from section table
+    apiKey = request.headers.get('API-X-KEY')
+    resApi = checkApiKey(apiKey)
+    if resApi.get('Status') == 900:
+        return Response(resApi)
+    if resApi.get('Info').ForUse == 2:  # blog api key
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    session = request.headers.get('Session')
+    resManager = checkSessionKey(session)
+    if resManager.get('Status') == 902:
+        return Response(resManager)
+    if accessCode not in resManager.get('AccessList'):  # access denied
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    code = request.data.get('Code')
+    locationCode = request.data.get('LocationCode')
+    if not code or not locationCode:
+        context = {
+            'Status': 400,
+            'Message': 'Input Incomplete'
+        }
+        return Response(context)
+    managerInfo = Manager.objects.filter(Code=code).first()
+    if managerInfo:
+        locInfo = LocationBelongToManager.objects.filter(LocationCode=locationCode, Manager=managerInfo).first()
+        if not locInfo:
+            context = {
+                'Status': 401,
+                'Message': 'Location code invalid'
+            }
+            return Response(context)
+        locInfo.delete()
+        context = {
+            'Status': 200
+        }
+        return Response(context)
+    else:
+        context = {
+            'Status': 401,
+            'Message': 'Code invalid'
+        }
+        return Response(context)
+
+
+@api_view(['GET'])
+def getManagerList(request):
+    accessCode = 7858847  # fetch from section table
+    apiKey = request.headers.get('API-X-KEY')
+    resApi = checkApiKey(apiKey)
+    if resApi.get('Status') == 900:
+        return Response(resApi)
+    if resApi.get('Info').ForUse == 2:  # blog api key
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    session = request.headers.get('Session')
+    resManager = checkSessionKey(session)
+    if resManager.get('Status') == 902:
+        return Response(resManager)
+    if accessCode not in resManager.get('AccessList'):  # access denied
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    managerInfo = Manager.objects.filter(isDeleted=False).order_by('-RegisterTime')
+    if managerInfo:
+        context = {
+            'Status': 200,
+            'Manager': ManagerListSer(managerInfo, many=True).data
+        }
+        return Response(context)
+    else:
+        context = {
+            'Status': 201,
+            'Message': 'Empty list'
+        }
+        return Response(context)
+
+
+@api_view(['POST'])
+def getManagerInfo(request):
+    accessCode = 7890924  # fetch from section table
+    apiKey = request.headers.get('API-X-KEY')
+    resApi = checkApiKey(apiKey)
+    if resApi.get('Status') == 900:
+        return Response(resApi)
+    if resApi.get('Info').ForUse == 2:  # blog api key
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    session = request.headers.get('Session')
+    resManager = checkSessionKey(session)
+    if resManager.get('Status') == 902:
+        return Response(resManager)
+    if accessCode not in resManager.get('AccessList'):  # access denied
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    code = request.data.get('Code')
+    if not code:
+        context = {
+            'Status': 400,
+            'Message': 'Input incomplete'
+        }
+        return Response(context)
+    managerInfo = Manager.objects.filter(isDeleted=False, Code=code).first()
+    if managerInfo:
+        context = {
+            'Status': 200,
+            'Manager': ManagerInfoSer(managerInfo).data
+        }
+        return Response(context)
+    else:
+        context = {
+            'Status': 401,
+            'Message': 'code invalid'
+        }
+        return Response(context)
+
+
+@api_view(['POST'])
+def getLocationListByPhrase(request):
+    accessCode = 7890924  # fetch from section table
+    apiKey = request.headers.get('API-X-KEY')
+    resApi = checkApiKey(apiKey)
+    if resApi.get('Status') == 900:
+        return Response(resApi)
+    if resApi.get('Info').ForUse == 2:  # blog api key
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    session = request.headers.get('Session')
+    resManager = checkSessionKey(session)
+    if resManager.get('Status') == 902:
+        return Response(resManager)
+    if accessCode not in resManager.get('AccessList'):  # access denied
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    phrase = request.data.get('Phrase')
+    if not phrase:
+        context = {
+            'Status': 400,
+            'Message': 'Input incomplete'
+        }
+        return Response(context)
+    fetchInfo = []
+    bigCityInfo = BigCity.objects.filter(Name__contains=phrase, isDeleted=False)
+    if bigCityInfo:
+        fetchSer = BigCityListSer(bigCityInfo, many=True).data
+        for item in fetchSer:
+            fetchInfo.append(item)
+    cityInfo = City.objects.filter(Name__contains=phrase, isDeleted=False)
+    if cityInfo:
+        fetchSer = CityListSer(cityInfo, many=True).data
+        for item in fetchSer:
+            fetchInfo.append(item)
+    cityPartInfo = CityPart.objects.filter(Name__contains=phrase, isDeleted=False)
+    if cityPartInfo:
+        fetchSer = CityPartListSer(cityPartInfo, many=True).data
+        for item in fetchSer:
+            fetchInfo.append(item)
+    bigVillageInfo = BigVillage.objects.filter(Name__contains=phrase, isDeleted=False)
+    if bigVillageInfo:
+        fetchSer = BigVillageListSer(bigVillageInfo, many=True).data
+        for item in fetchSer:
+            fetchInfo.append(item)
+    villageInfo = Village.objects.filter(Name__contains=phrase, isDeleted=False)
+    if villageInfo:
+        fetchSer = VillageListSer(villageInfo, many=True).data
+        for item in fetchSer:
+            fetchInfo.append(item)
+    if len(fetchInfo) > 0:
+        context = {
+            'Status': 200,
+            'Location': fetchInfo
+        }
+        return Response(context)
+    else:
+        context = {
+            'Status': 201,
+            'Message': 'Empty list'
+        }
+        return Response(context)
+
+
+@api_view(['GET'])
+def exportToDatabase(request):
+    import pandas as pd
+    excel_file_path = 'moein.xlsx'
+    data = pd.read_excel(excel_file_path, header=None,
+                         names=['col1', 'col2', 'col3', 'col4'])
+    for index, row in data.iterrows():
+        print(index+1)
+        village = Village.objects.filter(Name=row['col1']).first()
+        if village:
+            sirName = f'معین {village.Name}'
+            if len(str(row['col2'])) == 10:
+                phone = f'0{row["col2"]}'
+            else:
+                phone = row['col2']
+            characterInfo = Character.objects.filter(Code=7284747).first()
+            managerInfo = Manager.objects.create(Name=row['col3'], Family=row['col4'], SirName=sirName, Phone=phone,
+                                                 Password=phone[7:], Character=characterInfo)
+            LocationBelongToManager.objects.create(LocationCode=village.Code, Manager=managerInfo)
+        else:
+            print(f'Error this Row {index+1}')
+
+
+# @api_view(['GET'])
+# def exportToDatabase(request):
+#     import pandas as pd
+#     excel_file_path = 'salehAbad.xlsx'
+#     data = pd.read_excel(excel_file_path, header=None,
+#                          names=['col1', 'col2', 'col3', 'col4', 'col5', 'col6', 'col7', 'col8', 'col9'])
+#     for index, row in data.iterrows():
+#         big_village = BigVillage.objects.filter(Code=row['col4']).first()
+#         Village.objects.create(Name=row['col5'], nPopulation=row['col7'], nHousehold=row['col6'],
+#                                BigVillage=big_village, CityCode=row['col2'])
+
+
+@api_view(['POST'])
+def getInfoPropertyLocation(request):
+    apiKey = request.headers.get('API-X-KEY')
+    resApi = checkApiKey(apiKey)
+    if resApi.get('Status') == 900:
+        return Response(resApi)
+    if resApi.get('Info').ForUse == 1:  # panel api key
+        session = request.headers.get('Session')
+        resManager = checkSessionKey(session)
+        if resManager.get('Status') == 902:
+            return Response(resManager)
+    propertyCode = request.data.get('PropertyCode')
+    locationCode = request.data.get('LocationCode')
+    if not propertyCode or not locationCode:
+        context = {
+            'Status': 400,
+            'Message': 'Input Incomplete'
+        }
+        return Response(context)
+    propertyInfo = Property.objects.filter(Code=propertyCode).first()
+    if not propertyInfo:
+        context = {
+            'Status': 401,
+            'Message': 'Property Code invalid'
+        }
+        return Response(context)
+    fetchInfo = PropertyBelongPlace.objects.filter(SubProperty__Property__Code=propertyCode, PlaceCode=locationCode)
+    if fetchInfo:
+        fetchInfoSer = PropertyBelongPlaceSer(fetchInfo, many=True).data
+        context = {
+            'Status': 200,
+            'Property': fetchInfoSer
+        }
+        return Response(context)
+    else:
+        context = {
+            'Status': 402,
+            'Message': 'Location code invalid or empty list'
+        }
+        return Response(context)
+
+
+@api_view(['GET'])
+def getSlider(request):
+    apiKey = request.headers.get('API-X-KEY')
+    resApi = checkApiKey(apiKey)
+    if resApi.get('Status') == 900:
+        return Response(resApi)
+    sliderInfo = Slider.objects.all()
+    if sliderInfo:
+        sliderInfoSer = SliderSer(sliderInfo, many=True).data
+        context = {
+            'Status': 200,
+            'Slider': sliderInfoSer
+        }
+        return Response(context)
+    else:
+        context = {
+            'Status': 400,
+            'Message': 'Empty list'
+        }
+        return Response(context)
+
+
+@api_view(['POST'])
+def addSlider(request):
+    accessCode = 7186197  # fetch from section table
+    apiKey = request.headers.get('API-X-KEY')
+    resApi = checkApiKey(apiKey)
+    if resApi.get('Status') == 900:
+        return Response(resApi)
+    if resApi.get('Info').ForUse == 2:  # blog api key
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    session = request.headers.get('Session')
+    resManager = checkSessionKey(session)
+    if resManager.get('Status') == 902:
+        return Response(resManager)
+    if accessCode not in resManager.get('AccessList'):  # access denied
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    image = request.FILES.get('Image')
+    if not image:
+        context = {
+            'Status': 400,
+            'Message': 'Input Incomplete'
+        }
+        return Response(context)
+    Slider.objects.create(Image=image)
+    context = {
+        'Status': 200
+    }
+    return Response(context)
+
+
+@api_view(['POST'])
+def deleteSlider(request):
+    accessCode = 7695227  # fetch from section table
+    apiKey = request.headers.get('API-X-KEY')
+    resApi = checkApiKey(apiKey)
+    if resApi.get('Status') == 900:
+        return Response(resApi)
+    if resApi.get('Info').ForUse == 2:  # blog api key
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    session = request.headers.get('Session')
+    resManager = checkSessionKey(session)
+    if resManager.get('Status') == 902:
+        return Response(resManager)
+    if accessCode not in resManager.get('AccessList'):  # access denied
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    code = request.data.get('Code')
+    if not code:
+        context = {
+            'Status': 400,
+            'Message': 'Input Incomplete'
+        }
+        return Response(context)
+    sliderInfo = Slider.objects.filter(Code=code).first()
+    if not sliderInfo:
+        context = {
+            'Status': 401,
+            'Message': 'Slider not found'
+        }
+        return Response(context)
+    sliderInfo.delete()
+    context = {
+        'Status': 200
+    }
+    return Response(context)
+
+
+@api_view(['GET'])
+def getAccessLocationList(request):
+    apiKey = request.headers.get('API-X-KEY')
+    resApi = checkApiKey(apiKey)
+    if resApi.get('Status') == 900:
+        return Response(resApi)
+    if resApi.get('Info').ForUse == 2:  # blog api key
+        context = {
+            'Status': -1,
+            'Message': 'Access Denied'
+        }
+        return Response(context)
+    session = request.headers.get('Session')
+    resManager = checkSessionKey(session)
+    if resManager.get('Status') == 902:
+        return Response(resManager)
+    if resManager.get('Manager').Character.AccessLevel == 3:  # responsible
+        locationInfo = LocationBelongToManager.objects.filter(Manager=resManager.get('Manager'))
+        if locationInfo:
+            accInfoSer = AccessLocationResponsibleSer(locationInfo, many=True).data
+            context = {
+                'Status': 200,
+                'Location': accInfoSer
+            }
+            return Response(context)
+        else:
+            context = {
+                'Status': 201,
+                'Message': 'Empty list'
+            }
+            return Response(context)
+    else:
+        context = {
+            'Status': 401,
+            'Message': 'You are not a responsible'
         }
         return Response(context)

@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+
     path('', views.index, name='api-index'),
     path('loginCheck/', views.loginCheck, name='api-loginCheck'),
     path('checkSession/', views.checkSession, name='api-checkSession'),
@@ -46,9 +47,7 @@ urlpatterns = [
     path('editAnswerProperty/', views.editAnswerProperty, name='api-editAnswerProperty'),
     path('deleteAnswerProperty/', views.deleteAnswerProperty, name='api-deleteAnswerProperty'),
 
-
     path('getFullInfoPropertyBToPlace/', views.getFullInfoPropertyBToPlace, name='api-getFullInfoPropertyBToPlace'),
-
 
     path('getUrlExportPropertyToExcel/', views.getUrlExportPropertyToExcel, name='api-getUrlExportPropertyToExcel'),
 
@@ -58,6 +57,27 @@ urlpatterns = [
     path('editSolutionToProperty/', views.editSolutionToProperty, name='api-editSolutionToProperty'),
     path('deleteSolutionToProperty/', views.deleteSolutionToProperty, name='api-deleteSolutionToProperty'),
 
-
     path('getAccessListManager/', views.getAccessListManager, name='api-getAccessListManager'),
+    path('getCharacterList/', views.getCharacterList, name='api-getCharacterList'),
+    path('addManager/', views.addManager, name='api-addManager'),
+    path('editManager/', views.editManager, name='api-editManager'),
+    path('deleteManager/', views.deleteManager, name='api-deleteManager'),
+    path('addLocationToManager/', views.addLocationToManager, name='api-addLocationToManager'),
+    path('deleteLocationToManager/', views.deleteLocationToManager, name='api-deleteLocationToManager'),
+    path('getLocationListByPhrase/', views.getLocationListByPhrase, name='api-getLocationListByPhrase'),
+    path('getInfoPropertyLocation/', views.getInfoPropertyLocation, name='api-getInfoPropertyLocation'),
+
+    path('getManagerList/', views.getManagerList, name='api-getManagerList'),
+    path('getManagerInfo/', views.getManagerInfo, name='api-getManagerInfo'),
+
+    path('exportToDatabase/', views.exportToDatabase, name='api-exportToDatabase'),
+
+    path('getSlider/', views.getSlider, name='api-getSlider'),
+    path('addSlider/', views.addSlider, name='api-addSlider'),
+    path('deleteSlider/', views.deleteSlider, name='api-deleteSlider'),
+
+    path('getAccessLocationList/', views.getAccessLocationList, name='api-getAccessLocationList'),
+
+    path('getLocationListBlog/', views.getLocationListBlog, name='api-getLocationListBlog'),
+
 ]
