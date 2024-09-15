@@ -223,7 +223,7 @@
 - `GET /getAccessLocationList/`: دریافت لیست دسترسی‌های مکان.
 - `GET /getLocationListBlog/`: دریافت لیست مکان‌ها برای وبلاگ.
   
-لازم به ذکر است که API‌ ها با استفاده از نرم‌افزار Postman نوشته شده و کالکشن‌ها در آدرس [PostmanCollection](https://github.com/bestenator/ClaimsFollowUp/PostmanCollection) قرارداده شده است.
+لازم به ذکر است که API‌ ها با استفاده از نرم‌افزار Postman نوشته شده و کالکشن‌ها در آدرس [postmanCollection](https://github.com/Bestsenator/ClaimsFollowUp/blob/master/postmanCollection/API.postman_collection.json) قرارداده شده است.
 
 
 ## ساختار پروژه
