@@ -101,12 +101,12 @@
 1. این مخزن را کلون کنید.
 
    ```bash
-   git clone https://github.com/Bestsenator/ClaimsFollowUp.git
+   git clone https://github.com/Bestsenator/DemandTracking.git
    ```
    
 2. وارد دایرکتوری پروژه شوید:
    ```bash
-   cd ClaimsFollowUp
+   cd DemandTracking
    ```
 
 3. یک محیط مجازی پایتون ایجاد کنید:
@@ -223,13 +223,13 @@
 - `GET /getAccessLocationList/`: دریافت لیست دسترسی‌های مکان.
 - `GET /getLocationListBlog/`: دریافت لیست مکان‌ها برای وبلاگ.
   
-لازم به ذکر است که API‌ ها با استفاده از نرم‌افزار Postman نوشته شده و کالکشن‌ها در آدرس [postmanCollection](https://github.com/Bestsenator/ClaimsFollowUp/blob/master/postmanCollection/API.postman_collection.json) قرارداده شده است.
+لازم به ذکر است که API‌ ها با استفاده از نرم‌افزار Postman نوشته شده و کالکشن‌ها در آدرس [postmanCollection](https://github.com/Bestsenator/DemandTracking/blob/master/postmanCollection/API.postman_collection.json) قرارداده شده است.
 
 
 ## ساختار پروژه
 
 ```
-ClaimsFollowUp/
+DemandTracking/
 ├── config/
 │   ├── settings.py
 │   ├── urls.py
