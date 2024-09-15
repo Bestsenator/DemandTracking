@@ -1,10 +1,10 @@
-# پیگیری مطالبات - Claims Follow-Up
+# پیگیری مطالبات
 
 این پروژه یک سیستم مدیریت و وبلاگ برای نمایش و مدیریت اطلاعات مناطق مختلف مانند شهرستان‌ها، شهرها، دهستان‌ها و روستاها است. برای هر منطقه، اطلاعاتی از قبیل فرصت‌ها، تهدیدها، ضعف‌ها و ظرفیت‌ها ثبت و مدیریت می‌شود.
 
 ## پروژه مرتبط
 
-این پروژه بک‌اند به وبسایتی که با Vue.js توسعه داده شده است، متصل و همگام‌سازی شده است. وبسایت به کاربران این امکان را می‌دهد که با بک‌اند ارتباط برقرار کرده و اطلاعات و خدمات مورد نیاز خود را دریافت کنند. برای کسب اطلاعات بیشتر درباره‌ی وبسایت Vue.js، لطفاً به [پروژه وبسایت Vue.js](https://github.com/YourUsername/YourVueProject) مراجعه کنید.
+این پروژه بک‌اند به وبسایتی که با Vue.js توسعه داده شده است، متصل و همگام‌سازی شده است. وبسایت به کاربران این امکان را می‌دهد که با بک‌اند ارتباط برقرار کرده و اطلاعات و خدمات مورد نیاز خود را دریافت کنند. برای کسب اطلاعات بیشتر درباره‌ی وبسایت Vue.js، لطفاً به [پیگیری مطالبات](https://github.com/Fatemi-abasaleh/) مراجعه کنید.
 
 
 ## ویژگی‌های پروژه
@@ -223,8 +223,46 @@
 - `GET /getAccessLocationList/`: دریافت لیست دسترسی‌های مکان.
 - `GET /getLocationListBlog/`: دریافت لیست مکان‌ها برای وبلاگ.
   
-
 لازم به ذکر است که API‌ ها با استفاده از نرم‌افزار Postman نوشته شده و کالکشن‌ها در آدرس [PostmanCollection](https://github.com/bestenator/ClaimsFollowUp/PostmanCollection) قرارداده شده است.
+
+
+## ساختار پروژه
+
+```
+ClaimsFollowUp/
+├── config/
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── api/
+│   ├── migrations/
+│   ├── models.py
+│   ├── serializers.py
+│   ├── views.py
+│   └── urls.py
+├── index/
+│   ├── migrations/
+│   ├── models.py
+│   ├── serializers.py
+│   ├── views.py
+│   └── urls.py
+├── funcs/
+│   ├── check.py
+│   └── verify.py
+├── media/
+│   ├── locationImage
+│   ├── peopleBelongToPlace
+│   ├── propertyBelongToPlace
+│   └── slider
+├── static/
+├── manage.py
+├── db.sqlite3
+├── README.md
+├── README_fa.md
+├── README_en.md
+└── req.txt
+```
+  
 
 
 ## مشارکت
@@ -240,7 +278,7 @@
 
 ## تشکر ویژه
 
-[Seyed Abasaleh Fatemi](https://github.com/AliNajafzadeh7916)
+[Seyed Abasaleh Fatemi](https://github.com/Fatemi-abasaleh)
 
 تشکر ویژه از برنامه‌نویس فرانت اند ( vue.js ) که با تلاش و مهارت خود این وبسایت را توسعه داده و به این پروژه بک‌اند متصل کرده است. بدون زحمات او، امکان ایجاد این سیستم یکپارچه فراهم نمی‌شد.
 
