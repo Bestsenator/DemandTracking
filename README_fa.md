@@ -101,12 +101,12 @@
 1. این مخزن را کلون کنید.
 
    ```bash
-   git clone https://github.com/Bestsenator/HamiSho.git
+   git clone https://github.com/Bestsenator/ClaimsFollowUp.git
    ```
    
 2. وارد دایرکتوری پروژه شوید:
    ```bash
-   cd HamiSho
+   cd ClaimsFollowUp
    ```
 
 3. یک محیط مجازی پایتون ایجاد کنید:
@@ -127,7 +127,7 @@
 
 5. وابستگی‌های پروژه را نصب کنید:
    ```bash
-   pip install -r requirements.txt
+   pip install -r req.txt
    ```
 
 6. فایل `.env` را براساس نمونه `.env.example` تنظیم کنید.
@@ -143,7 +143,6 @@
    ```
 
 9. پروژه اکنون در `http://localhost:8000` در دسترس است.
----
 ## API Endpoints
 
 در این پروژه، API‌های زیر برای تعامل با داده‌ها و مدیریت بخش‌های مختلف فراهم شده است:
@@ -225,9 +224,9 @@
 - `GET /getLocationListBlog/`: دریافت لیست مکان‌ها برای وبلاگ.
   
 
-لازم به ذکر است که API‌ ها با استفاده از نرم‌افزار Postman نوشته شده و کالکشن‌های آن‌ها در آدرس [github.com/bestenator/test/](https://github.com/bestenator/test/) قرارداده شده است.
+لازم به ذکر است که API‌ ها با استفاده از نرم‌افزار Postman نوشته شده و کالکشن‌ها در آدرس [PostmanCollection](https://github.com/bestenator/ClaimsFollowUp/PostmanCollection) قرارداده شده است.
 
----
+
 ## مشارکت
 
 اگر مایل به مشارکت در این پروژه هستید، می‌توانید:
@@ -238,12 +237,12 @@
 4. شاخه خود را پوش کنید (`git push origin feature/AmazingFeature`).
 5. یک Pull Request باز کنید.
 
----
+
 ## تشکر ویژه
 
-[Ali Najafzadeh](https://github.com/AliNajafzadeh7916)
+[Seyed Abasaleh Fatemi](https://github.com/AliNajafzadeh7916)
 
-تشکر ویژه از برنامه‌نویس اپلیکیشن فلاتر که با تلاش و مهارت خود این اپلیکیشن را توسعه داده و به این پروژه بک‌اند متصل کرده است. بدون زحمات او، امکان ایجاد این سیستم یکپارچه فراهم نمی‌شد.
+تشکر ویژه از برنامه‌نویس فرانت اند ( vue.js ) که با تلاش و مهارت خود این وبسایت را توسعه داده و به این پروژه بک‌اند متصل کرده است. بدون زحمات او، امکان ایجاد این سیستم یکپارچه فراهم نمی‌شد.
 
 
 
